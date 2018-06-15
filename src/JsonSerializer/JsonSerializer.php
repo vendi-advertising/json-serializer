@@ -25,6 +25,8 @@ class JsonSerializer
     const UNDECLARED_PROPERTY_MODE_IGNORE = 2;
     const UNDECLARED_PROPERTY_MODE_EXCEPTION = 3;
 
+    const WILDCARD_CLASS = '*';
+
     /**
      * Storage for object
      *
@@ -283,9 +285,18 @@ class JsonSerializer
 
         $ref = new ReflectionClass($value);
         $className = $ref->getName();
+
+        //Search for per-class overrides
         if (array_key_exists($className, $this->customObjectSerializerMap)) {
             $data = array(static::CLASS_IDENTIFIER_KEY => $className);
             $data += $this->customObjectSerializerMap[$className]->serialize($value);
+            return $data;
+        }
+
+        //Search for wildcard overrides
+        if (array_key_exists(static::WILDCARD_CLASS, $this->customObjectSerializerMap)) {
+            $data = array(static::CLASS_IDENTIFIER_KEY => $className);
+            $data += $this->customObjectSerializerMap[static::WILDCARD_CLASS]->serialize($value);
             return $data;
         }
 
@@ -430,6 +441,12 @@ class JsonSerializer
 
         if (array_key_exists($className, $this->customObjectSerializerMap)) {
             $obj = $this->customObjectSerializerMap[$className]->unserialize($value);
+            $this->objectMapping[$this->objectMappingIndex++] = $obj;
+            return $obj;
+        }
+
+        if (array_key_exists(static::WILDCARD_CLASS, $this->customObjectSerializerMap)) {
+            $obj = $this->customObjectSerializerMap[static::WILDCARD_CLASS]->unserialize($value);
             $this->objectMapping[$this->objectMappingIndex++] = $obj;
             return $obj;
         }

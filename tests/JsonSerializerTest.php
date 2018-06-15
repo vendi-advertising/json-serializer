@@ -596,4 +596,26 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $unserialized = $this->serializer->unserialize($this->serializer->serialize($list));
         $this->assertTrue($list->serialize() === $unserialized->serialize());
     }
+
+    /**
+     * Test the wildcard serializer.
+     *
+     * @return void
+     */
+    public function testWildcardSerializer()
+    {
+        $customObjectSerializerMap[JsonSerializer::WILDCARD_CLASS] = new \Zumba\JsonSerializer\Test\SupportClasses\WildCardSerializer();
+        $local_serializer = new JsonSerializer(null, $customObjectSerializerMap);
+        $obj = new \Zumba\JsonSerializer\Test\SupportClasses\WildCardType();
+
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\WildCardType","fields":"alpha;beta"}';
+        $this->assertSame($expected, $local_serializer->serialize($obj));
+
+        $new_obj = $local_serializer->unserialize($local_serializer->serialize($obj));
+        $this->assertInstanceOf('\Zumba\JsonSerializer\Test\SupportClasses\WildCardType', $new_obj);
+        $this->assertObjectHasAttribute('alpha', $new_obj);
+        $this->assertObjectHasAttribute('beta', $new_obj);
+        $this->assertSame('ahpla', $new_obj->alpha);
+        $this->assertSame('ateb', $new_obj->beta);
+    }
 }
